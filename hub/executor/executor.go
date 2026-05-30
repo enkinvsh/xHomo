@@ -26,6 +26,7 @@ import (
 	"github.com/metacubex/mihomo/component/resolver"
 	"github.com/metacubex/mihomo/component/resource"
 	"github.com/metacubex/mihomo/component/sniffer"
+	"github.com/metacubex/mihomo/component/smart/lightgbm"
 	tlsC "github.com/metacubex/mihomo/component/tls"
 	"github.com/metacubex/mihomo/component/trie"
 	"github.com/metacubex/mihomo/component/updater"
@@ -96,6 +97,7 @@ func ApplyConfig(cfg *config.Config, force bool) {
 		}
 	}
 
+	closeSmart()
 	updateExperimental(cfg.Experimental)
 	updateUsers(cfg.Users)
 	updateProxies(cfg.Proxies, cfg.Providers)
@@ -180,6 +182,9 @@ func GetGeneral() *config.General {
 		KeepAliveInterval:       int(keepalive.KeepAliveInterval() / time.Second),
 		KeepAliveIdle:           int(keepalive.KeepAliveIdle() / time.Second),
 		DisableKeepAlive:        keepalive.DisableKeepAlive(),
+		LgbmAutoUpdate:          updater.LgbmAutoUpdate(),
+		LgbmUpdateInterval:      updater.LgbmUpdateInterval(),
+		LgbmUrl:                 lightgbm.LgbmUrl(),
 	}
 
 	return general
@@ -377,6 +382,9 @@ func updateUpdater(cfg *config.Config) {
 	updater.SetGeoAutoUpdate(general.GeoAutoUpdate)
 	updater.SetGeoUpdateInterval(general.GeoUpdateInterval)
 
+	updater.SetLgbmAutoUpdate(general.LgbmAutoUpdate)
+	updater.SetLgbmUpdateInterval(general.LgbmUpdateInterval)
+
 	controller := cfg.Controller
 	updater.DefaultUiUpdater = updater.NewUiUpdater(controller.ExternalUI, controller.ExternalUIURL, controller.ExternalUIName)
 	updater.DefaultUiUpdater.AutoDownloadUI()
@@ -412,6 +420,9 @@ func updateGeneral(general *config.General, logging bool) {
 
 	dialer.DefaultInterface.Store(general.Interface)
 	dialer.DefaultRoutingMark.Store(int32(general.RoutingMark))
+	dialer.DefaultTLSFragment.Store(general.TLSFragment)
+	dialer.DefaultTLSFragmentSize.Store(int32(general.TLSFragmentSize))
+	dialer.DefaultTLSFragmentDelay.Store(int32(general.TLSFragmentDelay))
 	if logging && general.RoutingMark > 0 {
 		log.Infoln("Use routing mark: %#x", general.RoutingMark)
 	}
@@ -425,6 +436,8 @@ func updateGeneral(general *config.General, logging bool) {
 	geodata.SetGeoSiteUrl(general.GeoXUrl.GeoSite)
 	geodata.SetMmdbUrl(general.GeoXUrl.Mmdb)
 	geodata.SetASNUrl(general.GeoXUrl.ASN)
+	lightgbm.SetLgbmUrl(general.LgbmUrl)
+	lightgbm.InitCollector(general.SmartCollectorSize)
 	mihomoHttp.SetUA(general.GlobalUA)
 	resource.SetETag(general.ETagSupport)
 
@@ -535,10 +548,23 @@ func updateIPTables(cfg *config.Config) {
 	log.Infoln("[IPTABLES] Setting iptables completed")
 }
 
+func closeSmart() {
+	for _, proxy := range tunnel.Proxies() {
+		if proxy.Type() == C.Smart {
+			adapter := proxy.Adapter()
+			if smart, ok := adapter.(*outboundgroup.Smart); ok {
+				smart.Close()
+			}
+		}
+	}
+}
+
 func Shutdown() {
 	listener.Cleanup()
 	tproxy.CleanupTProxyIPTables()
 	resolver.StoreFakePoolState()
+
+	closeSmart()
 
 	log.Warnln("Mihomo shutting down")
 }
