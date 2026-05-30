@@ -14,6 +14,11 @@ var (
 	DefaultRoutingMark = atomic.NewInt32(0)
 
 	DefaultInterfaceFinder = atomic.NewTypedValue[InterfaceFinder](nil)
+
+	// DefaultTLSFragment globally enables opt-in TLS ClientHello fragmentation.
+	DefaultTLSFragment      = atomic.NewBool(false)
+	DefaultTLSFragmentSize  = atomic.NewInt32(0)
+	DefaultTLSFragmentDelay = atomic.NewInt32(0)
 )
 
 type InterfaceFinder interface {
@@ -39,6 +44,9 @@ type option struct {
 	prefer        int
 	tfo           bool
 	mpTcp         bool
+	tlsFragment      bool
+	tlsFragmentSize  int
+	tlsFragmentDelay int
 	resolver      resolver.Resolver
 	netDialer     NetDialer
 }
@@ -106,6 +114,14 @@ func WithTFO(tfo bool) Option {
 func WithMPTCP(mpTcp bool) Option {
 	return func(opt *option) {
 		opt.mpTcp = mpTcp
+	}
+}
+
+func WithTLSFragment(enabled bool, size, delay int) Option {
+	return func(opt *option) {
+		opt.tlsFragment = enabled
+		opt.tlsFragmentSize = size
+		opt.tlsFragmentDelay = delay
 	}
 }
 
