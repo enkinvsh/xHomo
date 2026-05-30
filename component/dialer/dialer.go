@@ -167,11 +167,33 @@ func dialContext(ctx context.Context, network string, destination netip.Addr, po
 			bindMarkToDialer(opt.routingMark, dialer, network, destination)
 		}
 		if opt.tfo && !DisableTFO {
-			return dialTFO(ctx, *dialer, network, address)
+			c, err := dialTFO(ctx, *dialer, network, address)
+			return wrapTLSFragment(c, err, opt)
 		}
 	}
 
-	return dialer.DialContext(ctx, network, address)
+	c, err := dialer.DialContext(ctx, network, address)
+	return wrapTLSFragment(c, err, opt)
+}
+
+// wrapTLSFragment applies the opt-in TLS ClientHello fragmenter to a freshly
+// dialed connection. No-op unless opt.tlsFragment is set.
+func wrapTLSFragment(c net.Conn, err error, opt option) (net.Conn, error) {
+	if err != nil || c == nil {
+		return c, err
+	}
+	if !opt.tlsFragment && !DefaultTLSFragment.Load() {
+		return c, nil
+	}
+	size := opt.tlsFragmentSize
+	if size <= 0 {
+		size = int(DefaultTLSFragmentSize.Load())
+	}
+	delay := opt.tlsFragmentDelay
+	if delay <= 0 {
+		delay = int(DefaultTLSFragmentDelay.Load())
+	}
+	return newTLSFragmentConn(c, size, time.Duration(delay)*time.Millisecond), nil
 }
 
 func ICMPControl(destination netip.Addr) func(network, address string, conn syscall.RawConn) error {
