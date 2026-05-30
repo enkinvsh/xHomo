@@ -384,7 +384,11 @@ func NewProxiesParser(pdName string, tunnel C.Tunnel, filter string, excludeFilt
 		if err := yaml.Unmarshal(buf, schema); err != nil {
 			proxies, err1 := convert.ConvertsV2Ray(buf)
 			if err1 != nil {
-				return nil, fmt.Errorf("%w, %w", err, err1)
+				sbProxies, err2 := convert.ConvertsSingBox(buf)
+				if err2 != nil {
+					return nil, fmt.Errorf("%w, %w, %w", err, err1, err2)
+				}
+				proxies = sbProxies
 			}
 			schema.Proxies = proxies
 		}
