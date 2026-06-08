@@ -59,6 +59,27 @@ func GetFingerprint(clientFingerprint string) (UClientHelloID, bool) {
 	}
 }
 
+func GetClientHelloSpec(clientFingerprint string) (*utls.ClientHelloSpec, bool) {
+	if factory, ok := dropwebClientHelloSpecs[clientFingerprint]; ok {
+		spec := factory()
+		return &spec, true
+	}
+	return nil, false
+}
+
+// ApplyClientFingerprint applies a dropweb custom ClientHelloSpec to a UConn that was
+// created with the HelloCustom fingerprint. It is a no-op (returns nil) for the
+// built-in preset fingerprints, so all existing fingerprints are unaffected.
+// Must be called before BuildHandshakeState/Handshake; ApplyPreset leaves the UConn
+// in the NotBuilt state so the later applyPresetByID(HelloCustom) is a no-op and the
+// applied spec is preserved.
+func ApplyClientFingerprint(uConn *UConn, clientFingerprint string) error {
+	if spec, ok := GetClientHelloSpec(clientFingerprint); ok {
+		return uConn.ApplyPreset(spec)
+	}
+	return nil
+}
+
 var randomFingerprint = once.OnceValue(func() UClientHelloID {
 	chooser, _ := weightedrand.NewChooser(
 		weightedrand.NewChoice("chrome", 6),
@@ -90,6 +111,10 @@ var fingerprints = map[string]UClientHelloID{
 	"chrome120":  utls.HelloChrome_120,
 	"firefox120": utls.HelloFirefox_120,
 	"safari16":   utls.HelloSafari_16_0,
+
+	// dropweb custom specs: HelloCustom sentinel; real spec applied via GetClientHelloSpec + ApplyPreset.
+	"firefox148": utls.HelloCustom,
+	"safari26":   utls.HelloCustom,
 
 	// deprecated fingerprints should not be used
 	"chrome_psk":                 utls.HelloChrome_100_PSK,
