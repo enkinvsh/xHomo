@@ -35,6 +35,7 @@ func TestServer(t *testing.T) {
 		{name: "v2-utls-websocket", version: 2, fingerprint: "chrome", alpn: WsALPN},
 		{name: "v3", version: 3},
 		{name: "v3-utls", version: 3, fingerprint: "chrome"},
+		{name: "v3-utls-firefox148", version: 3, fingerprint: "firefox148"},
 	}
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
