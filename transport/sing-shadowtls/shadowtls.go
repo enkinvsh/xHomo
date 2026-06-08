@@ -76,8 +76,12 @@ func uTLSHandshakeFunc(config *tls.Config, clientFingerprint string, version int
 			tlsConn := tlsC.Client(conn, tlsConfig)
 			return tlsConn.HandshakeContext(ctx)
 		}
+		clientFingerprintName := clientFingerprint
 		if clientFingerprint, ok := tlsC.GetFingerprint(clientFingerprint); ok {
 			tlsConn := tlsC.UClient(conn, tlsConfig, clientFingerprint)
+			if err := tlsC.ApplyClientFingerprint(tlsConn, clientFingerprintName); err != nil {
+				return err
+			}
 			if slices.Equal(tlsConfig.NextProtos, WsALPN) {
 				err := tlsC.BuildWebsocketHandshakeState(tlsConn)
 				if err != nil {

@@ -35,7 +35,7 @@ type RealityConfig struct {
 	SupportX25519MLKEM768 bool
 }
 
-func GetRealityConn(ctx context.Context, conn net.Conn, fingerprint UClientHelloID, serverName string, realityConfig *RealityConfig) (net.Conn, error) {
+func GetRealityConn(ctx context.Context, conn net.Conn, fingerprint UClientHelloID, clientFingerprint string, serverName string, realityConfig *RealityConfig) (net.Conn, error) {
 	for retry := 0; ; retry++ {
 		verifier := &realityVerifier{
 			serverName: serverName,
@@ -50,6 +50,9 @@ func GetRealityConn(ctx context.Context, conn net.Conn, fingerprint UClientHello
 
 		uConn := utls.UClient(conn, uConfig, fingerprint)
 		verifier.UConn = uConn
+		if err := ApplyClientFingerprint(uConn, clientFingerprint); err != nil {
+			return nil, err
+		}
 		err := uConn.BuildHandshakeState()
 		if err != nil {
 			return nil, err
