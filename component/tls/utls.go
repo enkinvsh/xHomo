@@ -83,9 +83,12 @@ func ApplyClientFingerprint(uConn *UConn, clientFingerprint string) error {
 var randomFingerprint = once.OnceValue(func() UClientHelloID {
 	chooser, _ := weightedrand.NewChooser(
 		weightedrand.NewChoice("chrome", 6),
-		weightedrand.NewChoice("safari", 3),
+		// preset-backed keys: firefox/safari now map to HelloCustom, whose spec is
+		// applied by name only at the dial sites (the random path returns the
+		// UClientHelloID directly), so reference firefox120/safari16 here.
+		weightedrand.NewChoice("safari16", 3),
 		weightedrand.NewChoice("ios", 2),
-		weightedrand.NewChoice("firefox", 1),
+		weightedrand.NewChoice("firefox120", 1),
 	)
 	initClient := chooser.Pick()
 	log.Debugln("initial random HelloID:%s", initClient)
@@ -98,8 +101,13 @@ var randomFingerprint = once.OnceValue(func() UClientHelloID {
 
 var fingerprints = map[string]UClientHelloID{
 	"chrome":  utls.HelloChrome_Auto,
-	"firefox": utls.HelloFirefox_Auto,
-	"safari":  utls.HelloSafari_Auto,
+	// firefox/safari resolve to the newest dropweb custom spec (Firefox 148 /
+	// Safari 26.3) via the HelloCustom sentinel, so a shared config value stays
+	// valid across core versions (older cores map these to their built-in Auto
+	// preset and keep connecting). Real spec applied via GetClientHelloSpec +
+	// ApplyPreset at the dial sites; pin the old presets with firefox120/safari16.
+	"firefox": utls.HelloCustom,
+	"safari":  utls.HelloCustom,
 	"ios":     utls.HelloIOS_Auto,
 	"android": utls.HelloAndroid_11_OkHttp,
 	"edge":    utls.HelloEdge_Auto,

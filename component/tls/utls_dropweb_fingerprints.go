@@ -258,6 +258,11 @@ func safari263ClientHelloSpec() utls.ClientHelloSpec {
 // "safari16"). Each entry resolves to utls.HelloCustom in the fingerprints map and
 // the spec is applied via (*utls.UConn).ApplyPreset at the UClient call sites.
 var dropwebClientHelloSpecs = map[string]func() utls.ClientHelloSpec{
+	// Standard names resolve to the newest spec so a shared client-fingerprint
+	// value (firefox/safari) is backward-safe across core versions.
+	"firefox": firefox148ClientHelloSpec,
+	"safari":  safari263ClientHelloSpec,
+	// Explicit version-pinned aliases for the same specs.
 	"firefox148": firefox148ClientHelloSpec,
 	"safari26":   safari263ClientHelloSpec,
 }
