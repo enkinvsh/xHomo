@@ -480,7 +480,7 @@ func handleUDPConn(packet C.PacketAdapter) {
 			logMetadata(metadata, rule, rawPc)
 
 			// recover info to dialMetadata for smart
-			dialMetadata.Host = metadata.Host 
+			dialMetadata.Host = metadata.Host
 			dialMetadata.SmartTarget = metadata.SmartTarget
 			dialMetadata.SmartBlock = metadata.SmartBlock
 

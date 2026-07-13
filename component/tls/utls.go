@@ -100,7 +100,7 @@ var randomFingerprint = once.OnceValue(func() UClientHelloID {
 })
 
 var fingerprints = map[string]UClientHelloID{
-	"chrome":  utls.HelloChrome_Auto,
+	"chrome": utls.HelloChrome_Auto,
 	// firefox/safari resolve to the newest dropweb custom spec (Firefox 148 /
 	// Safari 26.3) via the HelloCustom sentinel, so a shared config value stays
 	// valid across core versions (older cores map these to their built-in Auto
