@@ -2,10 +2,10 @@ package tls
 
 // dropweb custom TLS client fingerprints.
 //
-// metacubex/utls v1.8.4 maxes out at HelloFirefox_120 / HelloSafari_16_0, so the
+// metacubex/utls v1.8.7 maxes out at HelloFirefox_120 / HelloSafari_16_0, so the
 // modern Firefox 148 and Safari 26.3 ClientHellos are not available as preset
 // ClientHelloIDs. Instead of vendoring a fork of utls (pluralplay's approach), we
-// keep metacubex/utls v1.8.4 as a normal dependency — preserving its security
+// keep metacubex/utls v1.8.7 as a normal dependency — preserving its security
 // updates — and define the two specs here against utls' PUBLIC API.
 //
 // These are applied via utls.HelloCustom + (*utls.UConn).ApplyPreset(&spec): see
