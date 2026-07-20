@@ -62,6 +62,7 @@ var (
 
 	LastTunConf  LC.Tun
 	LastTuicConf LC.TuicServer
+	lastTunError string
 )
 
 type Ports struct {
@@ -79,6 +80,12 @@ func GetTunConf() LC.Tun {
 		return LastTunConf
 	}
 	return tunLister.Config()
+}
+
+func GetTunLastError() string {
+	tunMux.Lock()
+	defer tunMux.Unlock()
+	return lastTunError
 }
 
 func GetTuicConf() LC.TuicServer {
@@ -505,8 +512,10 @@ func ReCreateTun(tunConf LC.Tun, tunnel C.Tunnel) {
 	}()
 
 	var err error
+	lastTunError = ""
 	defer func() {
 		if err != nil {
+			lastTunError = err.Error()
 			log.Errorln("Start TUN listening error: %s", err.Error())
 			tunConf.Enable = false
 		}
