@@ -57,6 +57,9 @@ func newUTLSClient(ctx context.Context, conn net.Conn, config *ClientConfig) (ne
 		Time:                   ntp.Now,
 		VerifyConnection:       verifier.VerifyConnection,
 	}, fingerprint)
+	if err := tlsC.ApplyClientFingerprint(uConn, config.ClientFingerprint); err != nil {
+		return nil, true, err
+	}
 	verifier.UConn = uConn
 	// uTLS has no hook for JLS, so first let it build the complete fingerprint.
 	// JLS authenticates the exact serialized ClientHello with random zeroed;

@@ -20,13 +20,17 @@ import (
 )
 
 func TestJLSClientServer(t *testing.T) {
-	for _, clientFingerprint := range []string{"", "chrome"} {
-		name := "Go"
-		if clientFingerprint != "" {
-			name = "uTLS"
-		}
-		t.Run(name, func(t *testing.T) {
-			testJLSClientServer(t, clientFingerprint)
+	for _, test := range []struct {
+		name              string
+		clientFingerprint string
+	}{
+		{name: "Go"},
+		{name: "Chrome", clientFingerprint: "chrome"},
+		{name: "Firefox148", clientFingerprint: "firefox148"},
+		{name: "Safari26", clientFingerprint: "safari26"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			testJLSClientServer(t, test.clientFingerprint)
 		})
 	}
 }
