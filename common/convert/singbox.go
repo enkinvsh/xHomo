@@ -9,7 +9,7 @@ import (
 	"strings"
 	"unicode"
 
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 // ConvertsSingBox convert SingBox subscribe proxies data to mihomo proxies config
