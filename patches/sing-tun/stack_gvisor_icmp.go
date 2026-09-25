@@ -101,7 +101,7 @@ func (f *ICMPForwarder) HandlePacket(id stack.TransportEndpointID, pkt *stack.Pa
 			DefaultNIC,
 			id.LocalAddress,
 			id.RemoteAddress,
-			header.IPv6ProtocolNumber,
+			header.IPv4ProtocolNumber,
 			false,
 		)
 		if gErr != nil {
@@ -114,8 +114,14 @@ func (f *ICMPForwarder) HandlePacket(id stack.TransportEndpointID, pkt *stack.Pa
 	} else {
 		ipHdr := header.IPv6(pkt.NetworkHeader().Slice())
 		icmpHdr := header.ICMPv6(pkt.TransportHeader().Slice())
-		if icmpHdr.Type() != header.ICMPv6EchoRequest || icmpHdr.Code() != 0 {
+		if icmpHdr.Type() != header.ICMPv6EchoRequest {
 			return false
+		}
+		if icmpHdr.Code() != 0 {
+			// The IPv6 built-in echo reply path lacks the LocalAddressTemporary
+			// check its IPv4 sibling has, so returning false would make the stack
+			// reply on behalf of arbitrary forwarded destinations.
+			return true
 		}
 		sourceAddr := M.AddrFromIP(ipHdr.SourceAddressSlice())
 		destinationAddr := M.AddrFromIP(ipHdr.DestinationAddressSlice())
@@ -158,7 +164,7 @@ func (f *ICMPForwarder) HandlePacket(id stack.TransportEndpointID, pkt *stack.Pa
 			PayloadCsum: pkt.Data().Checksum(),
 			PayloadLen:  pkt.Data().Size(),
 		}))
-		outgoingEP, gErr := f.stack.GetNetworkEndpoint(DefaultNIC, header.IPv4ProtocolNumber)
+		outgoingEP, gErr := f.stack.GetNetworkEndpoint(DefaultNIC, header.IPv6ProtocolNumber)
 		if gErr != nil {
 			// TODO: log error
 			return true
