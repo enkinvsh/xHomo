@@ -209,9 +209,17 @@ func (f *Fetcher[V]) pullLoop(forceUpdate bool) {
 	}
 }
 
+// DisableFileWatch stops file-backed providers from watching their file for
+// changes. Embedders that restart the core on every config change (the iOS
+// network extension) set it: each watcher costs two goroutines plus a kqueue.
+var DisableFileWatch bool
+
 func (f *Fetcher[V]) startPullLoop(forceUpdate bool) (err error) {
 	// pull contents automatically
 	if f.vehicle.Type() == P.File {
+		if DisableFileWatch {
+			return
+		}
 		f.watcher, err = fswatch.NewWatcher(fswatch.Options{
 			Path:     []string{f.vehicle.Path()},
 			Callback: f.updateCallback,
