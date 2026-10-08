@@ -7,6 +7,7 @@ import (
 
 	"github.com/metacubex/mipstack"
 	"github.com/metacubex/sing-tun/internal/gtcpip/header"
+	"github.com/metacubex/sing/common"
 	E "github.com/metacubex/sing/common/exceptions"
 	"github.com/metacubex/sing/common/logger"
 )
@@ -65,7 +66,7 @@ func (s *Mipstack) config() mipstack.Config {
 	if s.mtu != 0 && s.mtu < 1280 && !s.inet6Address.IsValid() {
 		routes = []mipstack.Route{{Destination: netip.MustParsePrefix("0.0.0.0/0")}}
 	}
-	return mipstack.Config{
+	config := mipstack.Config{
 		Routes:      routes,
 		Promiscuous: true,
 		MTU:         s.mtu,
@@ -77,7 +78,24 @@ func (s *Mipstack) config() mipstack.Config {
 			},
 		},
 	}
+	if common.LowMemory {
+		// mipstack lets every connection grow its buffers toward 16 MB, which a
+		// host capped at ~15 MB in total (the iOS 13-14 NetworkExtension) cannot
+		// survive under a burst of connections.
+		config.TCP.ReceiveBuffer = lowMemoryInitialBuffer
+		config.TCP.MaximumReceiveBuffer = lowMemoryMaximumBuffer
+		config.TCP.SendBuffer = lowMemoryInitialBuffer
+		config.TCP.MaximumSendBuffer = lowMemoryMaximumBuffer
+		config.UDP.ReceiveBuffer = lowMemoryMaximumBuffer
+		config.IP.ReceiveBuffer = lowMemoryMaximumBuffer
+	}
+	return config
 }
+
+const (
+	lowMemoryInitialBuffer = 64 * 1024
+	lowMemoryMaximumBuffer = 256 * 1024
+)
 
 func (s *Mipstack) Start() error {
 	stack, err := mipstack.New(s.config())
