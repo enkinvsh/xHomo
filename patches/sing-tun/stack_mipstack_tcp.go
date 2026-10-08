@@ -8,7 +8,17 @@ import (
 	M "github.com/metacubex/sing/common/metadata"
 )
 
+// AdmitConnection, when set, is asked before the mips stack accepts a new TCP
+// connection; false drops the SYN and the client retransmits it later. Hosts
+// under a hard memory limit (the iOS 13-14 NetworkExtension is killed at
+// ~15 MB) use it to shed load instead of losing every connection at once.
+var AdmitConnection func() bool
+
 func (s *Mipstack) forwardTCP(request *mips.TCPForwarderRequest) {
+	if admit := AdmitConnection; admit != nil && !admit() {
+		_ = request.Drop()
+		return
+	}
 	flow := request.Flow()
 	conn, err := request.Accept(s.ctx)
 	if err != nil {
