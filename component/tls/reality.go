@@ -130,6 +130,9 @@ func GetRealityConn(ctx context.Context, conn net.Conn, fingerprint UClientHello
 			return nil, errors.New("REALITY authentication failed")
 		}
 
+		// Key shares only feed the handshake, yet utls keeps them for the
+		// connection's life: ~10 KB per connection for the ML-KEM key alone.
+		uConn.HandshakeState.State13.KeyShareKeys = nil
 		return uConn, nil
 	}
 }
