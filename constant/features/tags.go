@@ -4,6 +4,9 @@ func Tags() (tags []string) {
 	if WithLowMemory {
 		tags = append(tags, "with_low_memory")
 	}
+	if NoExtraProtocols {
+		tags = append(tags, "no_extra_protocols")
+	}
 	if NoFakeTCP {
 		tags = append(tags, "no_fake_tcp")
 	}
