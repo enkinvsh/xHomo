@@ -9,6 +9,7 @@ import (
 
 	"github.com/metacubex/mihomo/adapter/inbound"
 	C "github.com/metacubex/mihomo/constant"
+	"github.com/metacubex/mihomo/constant/features"
 	LC "github.com/metacubex/mihomo/listener/config"
 	"github.com/metacubex/mihomo/listener/http"
 	"github.com/metacubex/mihomo/listener/mixed"
@@ -251,6 +252,9 @@ func ReCreateRedir(port int, tunnel C.Tunnel) {
 }
 
 func ReCreateShadowSocks(shadowSocksConfig string, tunnel C.Tunnel) {
+	if features.NoExtraProtocols {
+		return
+	}
 	ssMux.Lock()
 	defer ssMux.Unlock()
 
@@ -305,6 +309,9 @@ func ReCreateShadowSocks(shadowSocksConfig string, tunnel C.Tunnel) {
 }
 
 func ReCreateVmess(vmessConfig string, tunnel C.Tunnel) {
+	if features.NoExtraProtocols {
+		return
+	}
 	vmessMux.Lock()
 	defer vmessMux.Unlock()
 
@@ -357,6 +364,9 @@ func ReCreateVmess(vmessConfig string, tunnel C.Tunnel) {
 }
 
 func ReCreateTuic(config LC.TuicServer, tunnel C.Tunnel) {
+	if features.NoExtraProtocols {
+		return
+	}
 	tuicMux.Lock()
 	defer func() {
 		LastTuicConf = config
